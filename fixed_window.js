@@ -1,6 +1,7 @@
 import express from 'express'
 import Redis from 'ioredis'
 import dotenv from 'dotenv'
+import fs from 'fs'
 
 dotenv.config()
 
@@ -14,19 +15,25 @@ redis.on('error', (err) => console.error('Redis error:', err.message))
 
 const app = express()
 const PORT = process.env.PORT || 3000
-const RATE_LIMIT_WINDOW_SIZE = process.env.RATE_LIMIT_WINDOW_SIZE || 60;
-const RATE_LIMIT_REQUEST_COUNT = process.env.RATE_LIMIT_REQUEST_COUNT || 10;
+const RATE_LIMIT_WINDOW_SIZE = Number(process.env.RATE_LIMIT_WINDOW_SIZE) || 60;
+const RATE_LIMIT_REQUEST_COUNT = Number(process.env.RATE_LIMIT_REQUEST_COUNT) || 10;
+
+const fixedWindowScript = fs.readFileSync(
+  './scripts/fixed_window_rate_limiter.lua',
+  'utf8'
+)
 
 app.use(express.json())
 
 async function fixed_window_rate_limit_middleware(req, res, next) {
   try {
     const key = "user:" + req.ip
-    const requestCount = await redis.incr(key)
-
-    if (requestCount === 1) {
-      await redis.expire(key, RATE_LIMIT_WINDOW_SIZE)
-    }
+    const requestCount = await redis.eval(
+      fixedWindowScript,
+      1,
+      key,
+      RATE_LIMIT_WINDOW_SIZE
+    )
 
     if (requestCount > RATE_LIMIT_REQUEST_COUNT) {
       return res.status(429).send({
