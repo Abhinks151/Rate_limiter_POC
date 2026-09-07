@@ -26,9 +26,10 @@ Before running this project, ensure you have the following installed:
 
 ## Installation
 
-1. **Clone or navigate to the project directory**:
+1. **Clone the repository**:
    ```bash
-   cd /home/abhin/development/POCs/Rate_limiter
+   git clone https://github.com/Abhinks151/Rate_limiter_POC.git
+   cd Rate_limiter_POC
    ```
 
 2. **Install dependencies**:
