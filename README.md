@@ -63,7 +63,7 @@ This POC provides implementations for two rate-limiting algorithms:
 
 ---
 
-## 🛠️ Prerequisites
+## Prerequisites
 
 Ensure you have the following installed on your machine:
 - **[Node.js](https://nodejs.org/)** (v18 or higher recommended)
@@ -101,7 +101,7 @@ Ensure you have the following installed on your machine:
 
 ---
 
-## ▶Running the Server
+## Running the Server
 
 Make sure your Redis server is running (`redis-server`), then run either script directly using Node:
 
