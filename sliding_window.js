@@ -15,27 +15,31 @@ redis.on('error', (err) => console.error('Redis error:', err.message))
 
 const app = express()
 const PORT = process.env.PORT || 3000
-const RATE_LIMIT_WINDOW_SIZE = Number(process.env.RATE_LIMIT_WINDOW_SIZE) || 60;
+const RATE_LIMIT_SLIDING_WINDOW_SIZE = Number(process.env.RATE_LIMIT_SLIDING_WINDOW_SIZE) || 60;
 const RATE_LIMIT_REQUEST_COUNT = Number(process.env.RATE_LIMIT_REQUEST_COUNT) || 10;
 
-const fixedWindowScript = fs.readFileSync(
-  './scripts/fixed_window_rate_limiter.lua',
+const slidingWindowScript = fs.readFileSync(
+  './scripts/sliding_window_rate_limiter.lua',
   'utf8'
 )
 
 app.use(express.json())
 
 async function sliding_window_rate_limit_middleware(req, res, next) {
+  const key = "user:" + req.ip
+  const now = Date.now() / 1000;
   try {
-    const key = "user:" + req.ip
-    const requestCount = await redis.eval(
-      fixedWindowScript,
+
+    const result = await redis.eval(
+      slidingWindowScript,
       1,
       key,
-      RATE_LIMIT_WINDOW_SIZE
+      now,
+      RATE_LIMIT_SLIDING_WINDOW_SIZE,
+      RATE_LIMIT_REQUEST_COUNT
     )
 
-    if (requestCount > RATE_LIMIT_REQUEST_COUNT) {
+    if (result === 0) {
       return res.status(429).send({
         status: 429,
         message: "Too many requests"
@@ -43,6 +47,7 @@ async function sliding_window_rate_limit_middleware(req, res, next) {
     }
 
     next()
+
   } catch (error) {
     console.log(error);
     next()
