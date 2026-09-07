@@ -26,8 +26,10 @@ const fixedWindowScript = fs.readFileSync(
 app.use(express.json())
 
 async function fixed_window_rate_limit_middleware(req, res, next) {
+  const key = "user:" + req.ip
   try {
-    const key = "user:" + req.ip
+
+    // atomicity
     const requestCount = await redis.eval(
       fixedWindowScript,
       1,
